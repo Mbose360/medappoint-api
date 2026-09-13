@@ -14,7 +14,6 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'username',
             'first_name',
             'last_name',
             'email',
@@ -38,6 +37,10 @@ class RegisterSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     "Doctors must provide a speciality."
                 )
+            if not data.get("location"):
+                raise serializers.ValidationError(
+                    {"location": "Doctors must provide a location."}
+                )    
 
         return data
 
