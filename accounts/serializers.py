@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.contrib.auth import authenticate
 
 from accounts.models import User
 from doctors.models import Doctor
@@ -67,5 +68,24 @@ class RegisterSerializer(serializers.ModelSerializer):
             )    
 
         return user       
+
+
+class LoginSerializer(serializers.Serializer):
+
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)     
+
+
+    def validate(self, data):
+        user= authenticate(
+            email=data["email"],
+            password=data["password"]
+        )
+        if user is None : 
+            raise serializers.ValidationError(
+                "invalide email or password"
+            )
+        data["user"]  = user   
+        return data
 
 
