@@ -1,7 +1,4 @@
 from rest_framework import serializers
-from models import Schedule
-
-from rest_framework import serializers
 
 from .models import Schedule
 
@@ -17,21 +14,24 @@ class ScheduleSerializer(serializers.ModelSerializer):
             "start_time",
             "end_time",
         ]
-        read_only_fields = ["id"]
+        read_only_fields = ["id", "doctor"]
 
     def validate(self, data):
         start = data.get("start_time")
         end = data.get("end_time")
 
-        # 1. Make sure the schedule has a valid time range
+        # 1. Start time must be before end time
         if start >= end:
             raise serializers.ValidationError(
                 "Start time must be before end time."
             )
 
-        # 2. Check whether the exact same schedule already exists
+        # 2. Get the doctor from the serializer context
+        doctor = self.context["doctor"]
+
+        # 3. Check for an exact duplicate
         exist = Schedule.objects.filter(
-            doctor=data["doctor"],
+            doctor=doctor,
             day_of_week=data["day_of_week"],
             start_time=data["start_time"],
             end_time=data["end_time"],
@@ -42,13 +42,12 @@ class ScheduleSerializer(serializers.ModelSerializer):
                 "This schedule already exists."
             )
 
-        # 3. Get schedules for the same doctor on the same day
+        # 4. Check for overlapping schedules
         compares = Schedule.objects.filter(
-            doctor=data["doctor"],
+            doctor=doctor,
             day_of_week=data["day_of_week"],
         )
 
-        # 4. Check for overlapping schedules
         for compare in compares:
             if (
                 compare.start_time < end
