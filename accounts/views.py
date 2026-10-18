@@ -5,6 +5,7 @@ from rest_framework import status
 
 from accounts.serializers import RegisterSerializer , LoginSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
 # Create your views here.
 
 class RegisterAPI(APIView):
@@ -42,3 +43,13 @@ class LoginAPI(APIView):
             status=status.HTTP_200_OK
 
         )
+
+class ProfileAPI(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({
+            "id": request.user.id,
+            "email": request.user.email,
+            "role": request.user.role
+        })    
