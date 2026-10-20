@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 
 from doctors.models import Doctor , Schedule
-from .serializers import ScheduleSerializer
+from .serializers import ScheduleSerializer,DoctorSerializer
 
 
 # class ScheduleAPI(APIView):
@@ -64,3 +64,15 @@ class DoctorScheduleViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Automatically assign the schedule to this doctor."""
         serializer.save(doctor=self.get_doctor())
+
+
+
+
+class DoctorListAPIView(APIView):
+    def get(self,request):
+
+        doctors = Doctor.objects.select_related("user").all()
+        serializer = DoctorSerializer(doctors , many=True)
+
+        return Response(serializer.data)
+
