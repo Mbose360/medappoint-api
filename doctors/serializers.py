@@ -70,3 +70,19 @@ class DoctorSerializer(serializers.ModelSerializer):
             "last_name",
             "speciality",
         ]
+
+class DoctorDetailSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source="user.first_name", read_only=True)
+    email = serializers.EmailField(source="user.email", read_only=True)
+
+    class Meta:
+        model = Doctor
+        fields = [
+            "id",
+            "name",
+            "email",
+            "speciality",
+            "location",
+            "phone_number",
+        ]
+       
