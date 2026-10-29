@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Schedule
+from .models import Schedule, Doctor
 
 
 class ScheduleSerializer(serializers.ModelSerializer):
@@ -58,3 +58,40 @@ class ScheduleSerializer(serializers.ModelSerializer):
                 )
 
         return data
+
+
+class DoctorSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(source = "user.first_name",read_only=True) 
+    last_name  = serializers.CharField(source = "user.last_name" , read_only = True)
+    class Meta:
+        model = Doctor
+        fields = [
+            "first_name",
+            "last_name",
+            "speciality",
+        ]
+
+class DoctorDetailSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source="user.first_name", read_only=True)
+    email = serializers.EmailField(source="user.email", read_only=True)
+
+    class Meta:
+        model = Doctor
+        fields = [
+            "id",
+            "name",
+            "email",
+            "speciality",
+            "location",
+            "phone_number",
+        ]
+
+class DoctorScheduleSerializer(serializers.ModelSerializer):
+     
+     class Meta:
+         model = Schedule
+         fields = ["day_of_week",
+                   "start_time",
+                   "end_time"
+                   ]
+         
