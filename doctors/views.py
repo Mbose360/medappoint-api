@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 
 from doctors.models import Doctor , Schedule
-from .serializers import ScheduleSerializer,DoctorSerializer,DoctorDetailSerializer
+from .serializers import DoctorScheduleSerializer, ScheduleSerializer,DoctorSerializer,DoctorDetailSerializer
 
 
 # class ScheduleAPI(APIView):
@@ -90,3 +90,21 @@ class DoctorDetailAPIView(APIView):
         return Response(
             serializer.data
         )
+
+
+class DoctorScheduleApiView(APIView):
+
+    def get(self, request, pk):
+        try:
+            doctor = Doctor.objects.get(pk=pk)
+        except Doctor.DoesNotExist:
+            return Response(
+                {"detail": "Doctor not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        schedule = Schedule.objects.filter(doctor=doctor)
+        serializer = DoctorScheduleSerializer(schedule, many=True)
+
+        return Response(serializer.data)
+    

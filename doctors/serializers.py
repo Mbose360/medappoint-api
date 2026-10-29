@@ -85,4 +85,13 @@ class DoctorDetailSerializer(serializers.ModelSerializer):
             "location",
             "phone_number",
         ]
-       
+
+class DoctorScheduleSerializer(serializers.ModelSerializer):
+     
+     class Meta:
+         model = Schedule
+         fields = ["day_of_week",
+                   "start_time",
+                   "end_time"
+                   ]
+         
