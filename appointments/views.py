@@ -3,9 +3,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
-from .models import Patient
-from .serializers import AppointmentSerializer
-
+from .models import Patient ,Appointment
+from doctors.models import Schedule
+from .serializers import AppointmentSerializer, AvailableSlotsSerializer
+from datetime import date, datetime, timedelta
 
 class AppointmentCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -33,3 +34,72 @@ class AppointmentCreateAPIView(APIView):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
+
+class AvailableSlotsApiView(APIView):
+
+    def get(self, request, pk):
+
+        serializer = AvailableSlotsSerializer(
+            data=request.query_params
+        )
+        serializer.is_valid(raise_exception=True)
+
+        selected_date = serializer.validated_data["date"]
+
+        day = selected_date.strftime("%A").upper()
+
+        schedules = Schedule.objects.filter(
+            doctor_id=pk,
+            day_of_week=day
+        )
+
+        appointments = Appointment.objects.filter(
+            doctor_id=pk,
+            date=selected_date,
+            status__in=["PENDING", "BOOKED"]
+        )
+
+        available_slots = []
+
+        for schedule in schedules:
+
+            current_time = datetime.combine(
+                selected_date,
+                schedule.start_time
+            )
+
+            end_time = datetime.combine(
+                selected_date,
+                schedule.end_time
+            )
+
+            while current_time + timedelta(minutes=30) <= end_time:
+
+                slot_start = current_time.time()
+                slot_end = (current_time + timedelta(minutes=30)).time()
+
+                is_available = True
+
+                for appointment in appointments:
+
+                    if (
+                        slot_start < appointment.end_time
+                        and slot_end > appointment.start_time
+                    ):
+                        is_available = False
+                        break
+
+                if is_available:
+                    available_slots.append(
+                        slot_start.strftime("%H:%M")
+                    )
+
+                current_time += timedelta(minutes=30)
+
+        return Response({
+            "doctor": pk,
+            "date": selected_date,
+            "available_slots": available_slots
+        })
+
+    

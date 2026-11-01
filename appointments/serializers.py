@@ -81,4 +81,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
         return attrs
         
 
-   
+class AvailableSlotsSerializer(serializers.Serializer):
+    date = serializers.DateField()
+
