@@ -2,10 +2,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
 
 from .models import Patient ,Appointment
 from doctors.models import Schedule
-from .serializers import AppointmentSerializer, AvailableSlotsSerializer
+from .serializers import AppointmentSerializer, AvailableSlotsSerializer,PatientAppointmentSerializer
 from datetime import date, datetime, timedelta
 
 class AppointmentCreateAPIView(APIView):
@@ -102,4 +103,54 @@ class AvailableSlotsApiView(APIView):
             "available_slots": available_slots
         })
 
-    
+class PatientAppointmentListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    def  get(self,request):
+
+        patient = get_object_or_404(Patient, user=request.user)
+        appointments = appointments = Appointment.objects.filter(
+         patient=patient
+         ).select_related(
+         "doctor",
+         "doctor__user"
+         ).order_by("-date", "-start_time")
+        serializer = PatientAppointmentSerializer(appointments, many = True)
+
+        return Response(
+            serializer.data
+        )
+
+class CancelAppointmentAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+
+        patient = get_object_or_404(
+            Patient,
+            user=request.user
+        )
+
+        appointment = get_object_or_404(
+            Appointment,
+            pk=pk,
+            patient=patient
+        )
+
+        if appointment.status not in [
+            Appointment.AppointmentStatus.PENDING,
+            Appointment.AppointmentStatus.BOOKED
+        ]:
+            return Response(
+                {"detail": "This appointment cannot be cancelled."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        appointment.status = Appointment.AppointmentStatus.CANCELLED
+        appointment.save(update_fields=["status"])
+
+        serializer = PatientAppointmentSerializer(appointment)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )    

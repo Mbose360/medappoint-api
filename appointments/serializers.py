@@ -84,3 +84,30 @@ class AppointmentSerializer(serializers.ModelSerializer):
 class AvailableSlotsSerializer(serializers.Serializer):
     date = serializers.DateField()
 
+
+
+class PatientAppointmentSerializer(serializers.ModelSerializer):
+    doctor_name = serializers.SerializerMethodField()
+    doctor_speciality = serializers.CharField(
+        source="doctor.speciality",
+        read_only=True
+    )
+
+    class Meta:
+        model = Appointment
+        fields = [
+            "id",
+            "doctor_name",
+            "doctor_speciality",
+            "date",
+            "start_time",
+            "end_time",
+            "status",
+        ]
+        read_only_fields = fields
+
+    def get_doctor_name(self, obj):
+        first_name = obj.doctor.user.first_name
+        last_name = obj.doctor.user.last_name
+
+        return f"{first_name} {last_name}".strip()
