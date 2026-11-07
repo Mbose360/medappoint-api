@@ -111,3 +111,51 @@ class PatientAppointmentSerializer(serializers.ModelSerializer):
         last_name = obj.doctor.user.last_name
 
         return f"{first_name} {last_name}".strip()
+
+
+class DoctorAppointmentSerializer(serializers.ModelSerializer):
+    patient_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Appointment
+        fields = [
+            "id",
+            "patient_name",
+            "date",
+            "start_time",
+            "end_time",
+            "status",
+        ]
+        read_only_fields = fields
+
+    def get_patient_name(self, obj):
+        first_name = obj.patient.user.first_name
+        last_name = obj.patient.user.last_name
+
+        return f"{first_name} {last_name}".strip()
+
+class AppointmentStatusSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Appointment
+        fields = ["status"]
+
+    def validate_status(self, value):
+        current_status = self.instance.status
+
+        allowed_transitions = {
+            Appointment.AppointmentStatus.PENDING: [
+                Appointment.AppointmentStatus.BOOKED,
+                Appointment.AppointmentStatus.CANCELLED,
+            ],
+            Appointment.AppointmentStatus.BOOKED: [
+                Appointment.AppointmentStatus.CANCELLED,
+            ],
+        }
+
+        if value not in allowed_transitions.get(current_status, []):
+            raise serializers.ValidationError(
+                "This status transition is not allowed."
+            )
+
+        return value    

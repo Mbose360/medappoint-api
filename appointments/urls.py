@@ -1,12 +1,13 @@
 
 from django.urls import path
 
-from .views import AppointmentCreateAPIView, AvailableSlotsApiView,PatientAppointmentListAPIView,CancelAppointmentAPIView
-
+from .views import AppointmentCreateAPIView, AvailableSlotsApiView,PatientAppointmentListAPIView,CancelAppointmentAPIView,DoctorAppointmentListAPIView,DoctorAppointmentListAPIView,DoctorAppointmentStatusAPIView
 
 urlpatterns = [
     path('appointment/',AppointmentCreateAPIView.as_view()),
     path("doctors/<int:pk>/available-slots/",AvailableSlotsApiView.as_view()),
     path("appointments/my/",PatientAppointmentListAPIView.as_view(),name="my-appointments"),
-    path("appointments/<int:pk>/cancel/",CancelAppointmentAPIView.as_view(),name="cancel-appointment")
+    path("appointments/<int:pk>/cancel/",CancelAppointmentAPIView.as_view(),name="cancel-appointment"),
+    path("doctor/appointments/",DoctorAppointmentListAPIView.as_view()),
+    path("doctor/appointments/<int:pk>/status/",DoctorAppointmentStatusAPIView.as_view())
 ]

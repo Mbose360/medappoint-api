@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -5,8 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 
 from .models import Patient ,Appointment
-from doctors.models import Schedule
-from .serializers import AppointmentSerializer, AvailableSlotsSerializer,PatientAppointmentSerializer
+from doctors.models import Doctor, Schedule
+from .serializers import AppointmentSerializer, AppointmentStatusSerializer, AvailableSlotsSerializer, DoctorAppointmentSerializer,PatientAppointmentSerializer
 from datetime import date, datetime, timedelta
 
 class AppointmentCreateAPIView(APIView):
@@ -120,6 +121,23 @@ class PatientAppointmentListAPIView(APIView):
             serializer.data
         )
 
+class DoctorAppointmentListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    def  get(self,request):
+
+        doctor = get_object_or_404(Doctor, user=request.user)
+        appointments = Appointment.objects.filter(
+         doctor=doctor
+         ).select_related(
+         "patient",
+         "patient__user"
+         ).order_by("-date", "-start_time")
+        serializer = DoctorAppointmentSerializer(appointments, many=True)
+
+        return Response(
+            serializer.data
+        )    
+
 class CancelAppointmentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -154,3 +172,36 @@ class CancelAppointmentAPIView(APIView):
             serializer.data,
             status=status.HTTP_200_OK
         )    
+
+
+
+class DoctorAppointmentStatusAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def patch(self, request, pk):
+
+        appointment = get_object_or_404(
+            Appointment.objects.select_for_update(),
+            pk=pk,
+            doctor__user=request.user
+        )
+
+        serializer = AppointmentStatusSerializer(
+            appointment,
+            data=request.data,
+            partial=True
+        )
+
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        response_serializer = DoctorAppointmentSerializer(
+            appointment
+        )
+
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_200_OK
+        )
+        
